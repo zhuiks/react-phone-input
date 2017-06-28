@@ -42,7 +42,7 @@ function getOnlyCountries(onlyCountriesArray) {
     let selectedCountries = [];
     allCountries.map(function(country) {
       onlyCountriesArray.map(function(selCountry){
-        if (country.iso2 === selCountry) {
+        if (country.iso2.toLowerCase() === selCountry.toLowerCase()) {
           selectedCountries.push(country);
         }
       });
@@ -56,7 +56,7 @@ function excludeCountries(selectedCountries, excludedCountries) {
     return selectedCountries;
   } else {
     return filter(selectedCountries, function(selCountry) {
-      return !includes(excludedCountries, selCountry.iso2);
+      return !includes(excludedCountries, selCountry.iso2.toLowerCase());
     });
   }
 }
@@ -67,13 +67,13 @@ class ReactPhoneInput extends React.Component {
     super(props);
     let inputNumber = this.props.value || '';
     let onlyCountries = excludeCountries(getOnlyCountries(props.onlyCountries), props.excludeCountries);
-    let selectedCountryGuess = find(onlyCountries, {iso2: this.props.defaultCountry});
+    let selectedCountryGuess = find(onlyCountries, {iso2: this.props.defaultCountry.toLowerCase()});
     let selectedCountryGuessIndex = findIndex(allCountries, selectedCountryGuess);
     let dialCode = selectedCountryGuess && !startsWith(inputNumber.replace(/\D/g, ''), selectedCountryGuess.dialCode) ? selectedCountryGuess.dialCode : '';
     let formattedNumber = this.formatNumber(dialCode + inputNumber.replace(/\D/g, ''), selectedCountryGuess ? selectedCountryGuess.format : null);
     let preferredCountries = filter(allCountries, (country) => {
       return some(this.props.preferredCountries, (preferredCountry) => {
-        return preferredCountry === country.iso2;
+        return preferredCountry === country.iso2.toLowerCase();
       });
     });
     this.getNumber = this.getNumber.bind(this);
@@ -126,7 +126,7 @@ class ReactPhoneInput extends React.Component {
   }
 
   updateDefaultCountry(country) {
-    const newSelectedCountry = find(this.state.onlyCountries, {iso2: country});
+    const newSelectedCountry = find(this.state.onlyCountries, {iso2: country.toLowerCase()});
     this.setState({
         defaultCountry: country,
         selectedCountry: newSelectedCountry,
@@ -532,7 +532,7 @@ ReactPhoneInput.prototype._searchCountry = memoize(function(queryString){
 });
 
 ReactPhoneInput.prototype.guessSelectedCountry = memoize(function(inputNumber, onlyCountries, defaultCountry) {
-  var secondBestGuess = find(allCountries, {iso2: defaultCountry}) || onlyCountries[0];
+  var secondBestGuess = find(allCountries, {iso2: defaultCountry.toLowerCase()}) || onlyCountries[0].toLowerCase();
   if(trim(inputNumber) !== '') {
 		var bestGuess = reduce(onlyCountries, function(selectedCountry, country) {
 			if(startsWith(inputNumber, country.dialCode)) {
@@ -562,7 +562,7 @@ ReactPhoneInput.defaultProps = {
   autoFormat: true,
   onlyCountries: [],
   excludeCountries: [],
-  defaultCountry: allCountries[0].iso2,
+  defaultCountry: allCountries[0].iso2.toLowerCase(),
   isValid: isNumberValid,
   flagsImagePath: './flags.png',
   onEnterKeyPress: function () {}
@@ -588,6 +588,6 @@ if (__DEV__) {
     <ReactPhoneInput defaultCountry='us' preferredCountries={['us', 'de']} excludeCountries={'in'}/>,
     document.getElementById('content'));
   ReactDOM.render(
-      <ReactPhoneInput defaultCountry='de' preferredCountries={['it']}/>,
+      <ReactPhoneInput defaultCountry='DE' preferredCountries={['it']}/>,
       document.getElementById('content'));
 }
