@@ -300,7 +300,9 @@ class ReactPhoneInput extends React.Component {
       }
 
       if(this.props.onChange) {
-        this.props.onChange(this.state.formattedNumber);
+        this.props.onChange({
+            value: this.state.formattedNumber
+        });
       }
     });
   }
@@ -329,7 +331,10 @@ class ReactPhoneInput extends React.Component {
       }, function() {
         this._cursorToEnd();
         if(this.props.onChange) {
-          this.props.onChange(formattedNumber);
+          this.props.onChange({
+              value: formattedNumber,
+              country: nextSelectedCountry.iso2
+          });
         }
       });
     }
