@@ -64,15 +64,15 @@ class ReactPhoneInput extends React.Component {
   constructor(props) {
     super(props);
     let inputNumber = this.props.value || '';
-    const defaultCountry = props.defaultCountry.toLowerCase() || props.allCountries[0].iso2.toLowerCase();
+    const defaultCountry = (props.defaultCountry || props.allCountries[0].iso2).toLowerCase();
     let onlyCountries = excludeCountries(getOnlyCountries(props.onlyCountries, props.allCountries), props.excludeCountries);
-    let selectedCountryGuess = find(onlyCountries, {iso2: defaultCountry});
+    let selectedCountryGuess = onlyCountries.find((c) => defaultCountry === c.iso2.toLowerCase());
     let selectedCountryGuessIndex = findIndex(props.allCountries, selectedCountryGuess);
     let dialCode = selectedCountryGuess && !startsWith(inputNumber.replace(/\D/g, ''), selectedCountryGuess.dialCode) ? selectedCountryGuess.dialCode : '';
     let formattedNumber = this.formatNumber(dialCode + inputNumber.replace(/\D/g, ''), selectedCountryGuess ? selectedCountryGuess.format : null);
     let preferredCountries = filter(props.allCountries, (country) => {
       return some(this.props.preferredCountries, (preferredCountry) => {
-        return preferredCountry === country.iso2.toLowerCase();
+        return preferredCountry.toLowerCase() === country.iso2.toLowerCase();
       });
     });
     this.getNumber = this.getNumber.bind(this);
@@ -318,7 +318,7 @@ class ReactPhoneInput extends React.Component {
     let currentSelectedCountry = this.state.selectedCountry;
     let nextSelectedCountry = find(this.state.onlyCountries, country);
 
-    if(currentSelectedCountry.iso2 !== nextSelectedCountry.iso2) {
+    if(currentSelectedCountry.iso2.toLowerCase() !== nextSelectedCountry.iso2.toLowerCase()) {
         // TODO - the below replacement is a bug. It will replace stuff from middle too
       let newNumber = this.state.formattedNumber.replace(currentSelectedCountry.dialCode, nextSelectedCountry.dialCode);
       let formattedNumber = this.formatNumber(newNumber.replace(/\D/g, ''), nextSelectedCountry.format);
@@ -333,7 +333,7 @@ class ReactPhoneInput extends React.Component {
         if(this.props.onChange) {
           this.props.onChange({
               value: formattedNumber,
-              country: nextSelectedCountry.iso2
+              country: nextSelectedCountry.iso2.toLowerCase()
           });
         }
       });
@@ -440,12 +440,12 @@ class ReactPhoneInput extends React.Component {
 		let countryDropDownList = map(this.state.preferredCountries.concat(this.state.onlyCountries), (country, index) => {
 			let itemClasses = classNames({
 				country: true,
-				preferred: country.iso2 === 'us' || country.iso2 === 'gb',
-				active: country.iso2 === 'us',
+				preferred: country.iso2.toLowerCase() === 'us' || country.iso2.toLowerCase() === 'gb',
+				active: country.iso2.toLowerCase() === 'us',
 				highlight: this.state.highlightCountryIndex === index
 			});
 
-			let inputFlagClasses = `flag ${country.iso2}`;
+			let inputFlagClasses = `flag ${country.iso2.toLowerCase()}`;
 
 			return (
 				<li
@@ -454,7 +454,7 @@ class ReactPhoneInput extends React.Component {
 					data-flag-key={`flag_no_${index}`}
 					className={itemClasses}
 					data-dial-code="1"
-					data-country-code={country.iso2}
+					data-country-code={country.iso2.toLowerCase()}
 					onClick={this.handleFlagItemClick.bind(this, country)}>
 					<div className={inputFlagClasses} />
 					<span className='country-name'>{country.name}</span>
@@ -494,7 +494,7 @@ class ReactPhoneInput extends React.Component {
       "open-dropdown": this.state.showDropDown
     });
 
-    let inputFlagClasses = `flag ${this.state.selectedCountry.iso2}`;
+    let inputFlagClasses = `flag ${this.state.selectedCountry.iso2.toLowerCase()}`;
 
     return (
       <div className="react-tel-input">
@@ -587,10 +587,25 @@ ReactPhoneInput.propTypes = {
 export default ReactPhoneInput;
 
 if (__DEV__) {
-  const allCountriesDefault = countryData.allCountries;
+  const allCountriesDefault = [
+      {
+    dialCode: "380",
+      iso2: "UA",
+      name: "Ukraine",
+          format:"+... (..) ...-....",
+      priority: 0
+  },
+      {
+    dialCode: "7",
+      iso2: "RU",
+      name: "Russia",
+      priority: 0
+  }
+  ];
+  //const allCountriesDefault = countryData.allCountries;
   const ReactDOM = require('react-dom');
   ReactDOM.render(
-    <ReactPhoneInput defaultCountry='us' preferredCountries={['us', 'de']} excludeCountries={'in'} allCountries={allCountriesDefault}/>,
+    <ReactPhoneInput allCountries={allCountriesDefault}/>,
     document.getElementById('content'));
   ReactDOM.render(
       <ReactPhoneInput defaultCountry='DE' preferredCountries={['it']} allCountries={allCountriesDefault}/>,
