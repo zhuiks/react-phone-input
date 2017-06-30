@@ -125,12 +125,15 @@ class ReactPhoneInput extends React.Component {
   }
 
   updateDefaultCountry(country) {
-    const newSelectedCountry = find(this.state.onlyCountries, {iso2: country.toLowerCase()});
-    this.setState({
-        defaultCountry: country,
-        selectedCountry: newSelectedCountry,
-        formattedNumber: '+' + newSelectedCountry.dialCode
-    });
+    let newState = {defaultCountry: country};
+    if(this.state.selectedCountry.iso2.toLowerCase() !== country) {
+        const newSelectedCountry = this.state.onlyCountries.find((c) => c.iso2.toLowerCase() === country.toLowerCase());
+      if(newSelectedCountry) {
+          newState.selectedCountry = newSelectedCountry;
+          //newState.formattedNumber = '+' + newSelectedCountry.dialCode;
+      }
+    }
+    this.setState(newState);
   }
 
   componentDidMount() {
@@ -145,6 +148,12 @@ class ReactPhoneInput extends React.Component {
     if (nextProps.defaultCountry &&
         nextProps.defaultCountry.toLowerCase() !== this.state.defaultCountry) {
           this.updateDefaultCountry(nextProps.defaultCountry.toLowerCase());
+    }
+    if (nextProps.value !== this.props.value) {
+        let inputNumber = nextProps.value || '';
+        let dialCode = this.state.selectedCountry && !startsWith(inputNumber.replace(/\D/g, ''), this.state.selectedCountry.dialCode) ? this.state.selectedCountry.dialCode : '';
+        let formattedNumber = this.formatNumber(dialCode + inputNumber.replace(/\D/g, ''), this.state.selectedCountry.format );
+        this.setState({formattedNumber: formattedNumber});
     }
   }
 
@@ -333,7 +342,7 @@ class ReactPhoneInput extends React.Component {
         if(this.props.onChange) {
           this.props.onChange({
               value: formattedNumber,
-              country: nextSelectedCountry.iso2.toLowerCase()
+              country: nextSelectedCountry.iso2
           });
         }
       });
@@ -536,7 +545,7 @@ ReactPhoneInput.prototype._searchCountry = memoize(function(queryString){
 });
 
 ReactPhoneInput.prototype.guessSelectedCountry = memoize(function(inputNumber, onlyCountries, defaultCountry) {
-  var secondBestGuess = find(this.props.allCountries, {iso2: defaultCountry.toLowerCase()}) || onlyCountries[0].toLowerCase();
+  const secondBestGuess = this.props.allCountries.find((c) => c.iso2.toLowerCase()===defaultCountry.toLowerCase()) || onlyCountries[0];
   if(trim(inputNumber) !== '') {
 		var bestGuess = reduce(onlyCountries, function(selectedCountry, country) {
 			if(startsWith(inputNumber, country.dialCode)) {
@@ -603,11 +612,45 @@ if (__DEV__) {
   }
   ];
   //const allCountriesDefault = countryData.allCountries;
+  class TestRoot extends React.Component {
+    constructor(props) {
+      super(props);
+      this.onChange=this.onChange.bind(this);
+      this.externalCountryChange=this.externalCountryChange.bind(this);
+      this.externalPhoneChange=this.externalPhoneChange.bind(this);
+      this.state = {
+        value: "+3801234567",
+        country: "UA"
+      }
+    }
+    onChange(params) {
+      this.setState(params);
+    }
+    externalPhoneChange(e) {
+      this.setState({value:e.target.value})
+    }
+    externalCountryChange(e) {
+      this.setState({country:e.target.value})
+    }
+    render() {
+      return (
+          <div>
+            <ReactPhoneInput
+              defaultCountry={this.state.country}
+              allCountries={allCountriesDefault}
+              value={this.state.value}
+              onChange={this.onChange}
+            />
+            <div>
+              Country: <input value={this.state.country} onChange={this.externalCountryChange}/><br/>
+              Phone: <input value={this.state.value} onChange={this.externalPhoneChange}/>
+            </div>
+          </div>
+      )
+  }
+  }
   const ReactDOM = require('react-dom');
   ReactDOM.render(
-    <ReactPhoneInput allCountries={allCountriesDefault}/>,
+    <TestRoot/>,
     document.getElementById('content'));
-  ReactDOM.render(
-      <ReactPhoneInput defaultCountry='DE' preferredCountries={['it']} allCountries={allCountriesDefault}/>,
-      document.getElementById('content'));
 }
